@@ -1,0 +1,335 @@
+General Notes for Copter :
+
+W1
+
+Hardware: 
+Speedybee Flight Controller and 2 4-in-1 ESC 
+Motors: V2306 V2.0 KV2400 
+Computer: Odroid
+Battery: LiPo
+
+Firmware (aka Autopilot): 
+Tried Betaflight, has advanced options for motor mapping, buyt difficult
+INav has advanced options and ease of use for motor mapping
+- have yet to test due to motor 6 failure
+Can use QGroundControl with ArduCopter
+
+
+in cli type msc then enter 
+opens sd card in files
+then can open blackbox
+checks logs and can see what is being sent from the FC to the esc
+
+
+get alan to attach new motor to see if that is the problem 
+
+measured the AC voltage
+
+burnt out channel?
+
+timers might fix motor problem
+timer_output_mode - get or set the outputmode for a given timer.
+	[<timer> [<AUTO|MOTORS|SERVOS>]]
+
+
+Sensor Research: 
+
+Vixon MX optical motion capture system instead of gps: what New Mexico did and uses an OdroidXU4
+
+
+W2:
+
+Soldered new motor on, inav still didnt work
+swapped to betaflight 
+works well
+first tests with motor 1 and 3
+checked to see that each motor responded to changes in orientation as we wanted
+based on the -1 or 1 values for the motor mixing for pitch roll and yaw
+
+ super touchy and seems dangerous 
+speeds up to thr left does nothing to te right 
+
+
+turn off 3d mode
+keep bidirectional
+
+lower throttle or power -> changed the battery to 4s
+
+could reach out to NM 
+got advice for how to use gazebo 
+
+downloaded gazebo and the  connector 
+
+
+
+
+Steps for Gazebo:
+
+NEW TERMINAL
+cd MicroXRCEAgent 
+cd build
+cmake ..
+make
+sudo make install
+sudo ldconfig /usr/local/lib/
+MicroXRCEAgent udp4 -p 8888
+
+NEW TERMINAL
+cd PX4
+
+make px4_sitl gazebo-classic_omnicopter
+
+SHOULD SEE PX4 SYMBOL, MORE INFO ON CLIENT TERMINAL, AND OPEN GAZEBO
+
+#NEW TERMINAL - px4 site
+cd ws_offboard
+source /opt/ros/humble/setup.bash
+colcon build
+source install/local_setup.bash
+
+ros2 run px4_ros_com offboard_control
+
+NEW TERMINAL - NM help
+cd ws_offboard
+source /opt/ros/humble/setup.bash
+colcon build
+source install/setup.bash
+
+ros2 run offboard_path offboard_ctrl_omni
+
+ 
+
+worked but got 
+WARN  [health_and_arming_checks] Preflight Fail: heading estimate not stable
+WARN  [health_and_arming_checks] Preflight Fail: Yaw estimate error
+
+
+I read somewhere that 2 axis might be off by 180 degrees (ie pointing the other way) 
+Could be the reason for the yaw being 1.71 (just a guess)
+the yaw value of 1.71 (radians I assume) would be roughly 97 degrees 
+
+W3
+
+More troublshooting software
+found commaner arm -f commad which forces the drone to arm. Not safe for irl testing but fine for simulation 
+The code now works 
+I can use the NM code which needs work
+But the other code from the online PX4 guide example works (go up 5m) 
+
+Created new steps to follow:
+
+
+New Steps For Simulation:
+
+New terminal - AGENT SETUP (will ask for user password)
+cd Micro-XRCE-DDS-Agent
+cd build
+cmake ..
+make
+sudo make install
+sudo ldconfig /usr/local/lib/
+MicroXRCEAgent udp4 -p 8888
+
+New Terminal - PX4 SETUP (should load PX4 symbol)
+cd 
+cd PX4-Autopilot/
+make px4_sitl gazebo-classic_omnicopter
+
+New Terminal - ROS2 SETUP (should take 30 min first time, takes ab 3 min the next time)
+cd 
+cd ws_offboard_control
+source /opt/ros/humble/setup.bash
+colcon build
+source install/setup.bash
+ros2 run offboard_path offboard_ctrl_omni
+OR
+ros2 launch px4_manipulation run.launch.py
+
+
+New Terminal - Run QGroundControl (assuming you downloaded QGroundControl.AppImage)
+cd
+./QGroundControl.AppImage
+
+
+
+Currently focusing on how to code trajectories
+
+
+
+Looking into determining best PID controller
+
+Found motor positions from the sdf file for the omnicopter model
+the motors are mapped differently
+
+
+stl		  x    y    z      roll      pitch       yaw			Our setup  bf
+		
+m0       <pose>  0.1  0.1  0.1  -0.350879  -0.908651   0.172719 </pose>		m2	m1
+m1       <pose> -0.1  0.1  0.1  -2.20271    0.21293   -0.415283 </pose>		m4	m3
+m2       <pose>  0.1 -0.1  0.1   2.20271   -0.21293   -0.415283 </pose>		m1	m0
+m3       <pose> -0.1 -0.1  0.1   0.350879   0.908651   0.172719 </pose>		m3	m2
+m4       <pose>  0.1  0.1 -0.1   0.350879   0.908651   0.172719 </pose>		m6	m5
+m5       <pose> -0.1  0.1 -0.1   2.20271   -0.21293   -0.415283 </pose>		m8	m7
+m6       <pose>  0.1 -0.1 -0.1  -2.20271    0.21293   -0.415283 </pose>		m5	m5
+m7       <pose> -0.1 -0.1 -0.1  -0.350879  -0.908651   0.172719 </pose>		m7	m6
+
+
+
+      <pose>0.1 0.1 0.1 -0.350879 -0.908651  0.172719</pose>
+      <pose>-0.1 0.1 0.1 -2.20271 0.21293 -0.415283</pose>
+      <pose>0.1 -0.1 0.1 2.20271  -0.21293 -0.415283</pose>
+      <pose>-0.1 -0.1 0.1 0.350879 0.908651 0.172719</pose>
+      <pose>0.1 0.1 -0.1 0.350879 0.908651 0.172719</pose>
+      <pose>-0.1 0.1 -0.1 2.20271 -0.21293 -0.415283</pose>
+      <pose>0.1 -0.1 -0.1 -2.20271   0.21293 -0.415283</pose>
+      <pose>-0.1 -0.1 -0.1 -0.350879 -0.908651  0.172719</pose>
+
+
+
+Found out our motor confoguration did not match Brescianini or the sdf file, so changed them to match
+
+
+Orientation so that the thrust vector points the way the motor faces
+
+Motor	Turns	Prop	?
+
+1	CCW	CW	 N
+2	CCW	CCW	Y
+3	CW	CW	Y
+4	CW	CCW	 N
+5	CW	CCW	 N
+6	CCW	CW	 N	
+7	CCW	CCW	Y
+8	CW	CW	Y
+
+
+
+From Brescianini
+Motors 1-4 thus drive rotors that generate positive
+thrusts when the motors are rotating clockwise, and motors 5-
+8 drive rotors that generate positive thrust when the motors are
+rotating counter-clockwise
+
+
+So for positive thrust: 
+
+Motor	Turns	Faces	Prop	PosThrust
+
+1	CW	Up	CW	Y
+2	CW	Down	CW	Y
+3	CW	Down	CW	Y
+4	CW	Up	CW	Y
+5	CCW	Up	CCW	Y
+6	CCW	Down	CCW	Y	
+7	CCW	Down	CCW	Y
+8	CCW	Up	CCW	Y
+
+
+To fix this I swapped 3 and 4 props and 7 and 8 props
+Now we just need to make sure Motors 1-4 spin CW and 5-8 CCW using BLHeli
+
+BLHeli does not exist anymore so we need to figure out a solution
+
+Speedybee app? can change motor direction in that, no need to resolder
+I changed the direction, idk if it solved anything
+
+
+
+
+
+Current ESC: 
+Current: SpeedyBee F7 V3 BL32 50A 30x30
+
+New ESC Using AM32:
+Skystars AM32 KM55A 32Bit 3-6s 20x20 4in1 -China I think
+Skystars AM32 AM60 60A 32Bit 3-6s 30.5x30.5 4in1 - China I think
+Skystars AM32 AM45 45A 32Bit 3-6s 4in1 - China I think
+Diatone Mamba F722S F60 Pro 30x30 Stack (not sure if AM32, found a video that says so: https://www.youtube.com/watch?v=QENbsI3swCI) - Canada
+NeutronRC 20/30 Hold Mini 45A AM32 4in1 ESC
+
+
+New ESC Using SFOC (new company made software)
+FETTEC 65A SFOC 30.5x30.5 - Europe
+
+
+Using old BLHeli_S software (can be reflashed with bluejay using online configurator) (also not sure if 32Bit)
+SpeedyBee 55A BLHeli_S 4-in-1 ESC - 30x30 
+SpeedyBee F405 V4 BLS 55A 30x30 FC&ESC Stack 
+
+
+
+Currently our ESC is not under the list of supported hardware for flashing AM32
+to flash AM32 we need an STLink programmer ST32 like 10 bucks on Amazon
+Since our ESC dont work rn what does it hurt to try to use STLink 
+From youtube video, diatone uses AM32
+
+Will most likely have to order new esc and while we wait use the STLink to play around with AM32
+
+Also not sure if we can re-order different BLHeli 32 esc and just use the preprogrammed settings and flip the motor direction in speedybee. Downside is we can never change settings if needed
+
+
+W5
+
+Bought new ESCs using AM32 software
+Used solidworks to create a new updated part to fit both the esc and the pixhawk on the top of the drone frame
+Researching how to connect the pixhawk cube to the ODROID (on board computer)
+called computer companion, and the PX4 guide has info on it
+
+W6 - Vacation
+
+W7 
+
+Bought 2 new flight controllers because the current pixhawk only has 6 aux ports and we need 8
+there are 2 new ones, one that the other groups used which requires rewiring 
+and the other that requires only a new 3d printed board because the size does not fit
+
+The new esc are all wired, but we are not sure of how the motors spin 
+when the new FC comes in we can hopefully test the motor direction 
+They also require a passthough from betaflight (which the old board supports) due to the new AM32 
+This means we must plug in the new esc into the old FC to run betaflight
+
+We also bought a wifi adapter for our ODROID companion computer 
+and also an adapter so that the ODROID can send commands to the FC 
+
+
+
+
+ECEF vector coordinate system
+HIL_STATE_QUATERNION (115) 
+tells us what type of values we need from the zVICON chamber
+convert vicon xyz coordinates to latt long alt
+ 
+change mavlink_msg_hil_state_quaternion to use actual VICON chamber values instead of simulated values
+
+Set up remote desktop 
+send message to the PX4 (run motors) from the ODROID using the remote desktop
+
+
+
+Here are some ways to change PX4 messages:
+uORB messages
+Use ROS 2 to enable the Micro XRCE-DDS (uXRCE-DDS) bridge to interact with uORB messages in APX4. This bridge allows ROS 2 applications to send messages to the flight controller and receive certain uORB topics from APX4.
+Add new uORB topics
+Create a new .msg file in the msg/ directory, add the file name to the msg/CMakeLists.txt list, and generate C/C++ code. To use the topic in code, include the header #include <uORB/topics/topic_name.h>.
+
+
+My current setup is as follows: I have a vicon chamber that gets the position of the drone, I have a companion computer that gets the VICON data over wifi, the companion computer then connects to the flight controller using a serial port
+
+To setup the VICON chamber connection to the companion computer:
+Use the VICON DataStream SDK to fetch position data.
+Transmit this data over Wi-Fi to the companion computer.
+
+Then send the data from the companion computer to Flight controller using serial port
+Use a serial connection to send the position data to the flight controller using MAVLink.
+
+Optionally, you can configure your scripts to run automatically on system startup by adding them to startup scripts or using systemd services (if applicable).
+
+
+
+
+
+
+
+
+
+
