@@ -155,9 +155,6 @@ cd
 Currently focusing on how to code trajectories
 
 
-
-Looking into determining best PID controller
-
 Found motor positions from the sdf file for the omnicopter model
 the motors are mapped differently
 
@@ -234,7 +231,7 @@ Speedybee app? can change motor direction in that, no need to resolder
 I changed the direction, idk if it solved anything
 
 
-
+Need to replace ESC due to BLHELI shut down
 
 
 Current ESC: 
@@ -244,7 +241,7 @@ New ESC Using AM32:
 Skystars AM32 KM55A 32Bit 3-6s 20x20 4in1 -China I think
 Skystars AM32 AM60 60A 32Bit 3-6s 30.5x30.5 4in1 - China I think
 Skystars AM32 AM45 45A 32Bit 3-6s 4in1 - China I think
-Diatone Mamba F722S F60 Pro 30x30 Stack (not sure if AM32, found a video that says so: https://www.youtube.com/watch?v=QENbsI3swCI) - Canada
+Diatone Mamba F722S F60 Pro 30x30 Stack (not AM32) - Canada
 NeutronRC 20/30 Hold Mini 45A AM32 4in1 ESC
 
 
@@ -296,7 +293,7 @@ and also an adapter so that the ODROID can send commands to the FC
 
 ECEF vector coordinate system
 HIL_STATE_QUATERNION (115) 
-tells us what type of values we need from the zVICON chamber
+tells us what type of values we need from the VICON chamber
 convert vicon xyz coordinates to latt long alt
  
 change mavlink_msg_hil_state_quaternion to use actual VICON chamber values instead of simulated values
@@ -312,6 +309,9 @@ Use ROS 2 to enable the Micro XRCE-DDS (uXRCE-DDS) bridge to interact with uORB 
 Add new uORB topics
 Create a new .msg file in the msg/ directory, add the file name to the msg/CMakeLists.txt list, and generate C/C++ code. To use the topic in code, include the header #include <uORB/topics/topic_name.h>.
 
+Too difficult to understand, for ease of use we swapped to MAVLink 
+
+W8 - Figuring out the ODROID
 
 My current setup is as follows: I have a vicon chamber that gets the position of the drone, I have a companion computer that gets the VICON data over wifi, the companion computer then connects to the flight controller using a serial port
 
@@ -324,12 +324,59 @@ Use a serial connection to send the position data to the flight controller using
 
 Optionally, you can configure your scripts to run automatically on system startup by adding them to startup scripts or using systemd services (if applicable).
 
+Got the odroid to run by downloading linux OS from my computer onto the MicroSD card 
+
+Generic setup explanation:
+Hardware:
+Flight Controller (FC) controls the Electronic Speed Controllers (ESC) which control the motors
+Odroid receives VICON Chmaber data from wifi chip, then connects and sends it to FC via serial port
+
+Software:
+PX4 Autopilot controls the FC
+AM32 ESC Firmware controls the ESC/Motors 
+
+Odroid receives position data over wifi TCP/UDP connection
+Odroid connects to FC via serial port and sends data via MAVLink
+Autopilot accepts MAVLink data as GPS data 
 
 
+W9 - 
 
+Still looking at ODROID and how to communicate using MAVLink to send mesages to the PX4
+Also burnt out FC by flashing AM32 software onto ESCs somehow?
 
+Last weeks - created more python mavlink scripts to run 
+connected to drone through davids computer and spun motors 
+David has all the python scripts to run 
 
+May Bullets
+First week I completed all of the new hire objectives (training videos, DevOps practice, reading general information)
+Talked with PI to understand objectives for the omnicopter project and read research papers associated with the project
+Research basic drone info, looked into different possible sensors to implement later
+Spent time troubleshooting why only one motor didn't run, and eventually fixed the issue
+Did initial testing without propellers to test if motors spun the correct way,
+Fixed the drone frame before adding propellers for basic testing of how the drone responds to the controller
+Downloaded drone simulation software to run the omnicopter autonomously for safer testing
+Currently creating paths for the drone to follow in the simulation
 
+June Bullets
+Researched new ESCs to buy due to BLHeli company shutdown
+Bought new ESCs and created a new 3D model to fit new ESC and a different flight controller
+Looked into connecting computer companion to the flight contoller
+Bought 2 new flight controllers due to lack of enough aux ports for motors
+Rewired the connections to fit new flight controller
+More research in sending VICON chamber data to the ODROID, and sending data from ODROID to the flight controller
+Created new 3D model for ESC and flight controller
+Downloaded linux OS to micro SD card to use in the ODROID
 
+July Bullets
+Set up the ODROID with the new OS 
+Set up a hotspot on a computer for ODROID to connect to 
+Created a startup script that creates a server to communicate from a computer to the ODROID
+Created python scripts to send MAVLink messages to the Autopilot from a computer through the ODROID server
+Sent fake gps data to the autopilot through a script
+Armed the drone wirelessly from a computer python script 
+Collected Motion Capture data of the drone position on the computer and sent it to the drone    
+Drone uses MoCap data to determine its position
 
 

@@ -1,4 +1,4 @@
-Guide to create Gazebo Simulation: Ubuntu 22.04
+Guide to create Gazebo Simulation: Linux Ubuntu 22.04
 Follow steps from https://docs.px4.io/main/en/ros2/user_guide.html#installation-setup
 First install PX4 autopilot, then ROS2 "humble" or "foxy" for either Ubuntu 22.04 or 20.04, then download the Micro XRCE-DDS Agent and Client 
 
@@ -8,6 +8,8 @@ git clone https://github.com/PX4/PX4-Autopilot.git --recursive
 bash ./PX4-Autopilot/Tools/setup/ubuntu.sh
 cd PX4-Autopilot/
 make px4_sitl
+
+(If there are any python missing package errors follow this site: https://docs.px4.io/main/en/dev_setup/building_px4.html#failed-to-import-python-packages)
 
 Open another terminal to Install ROS2:
 First install Python dependencies:
@@ -28,7 +30,7 @@ sudo apt install ros-humble-desktop
 sudo apt install ros-dev-tools
 source /opt/ros/humble/setup.bash && echo "source /opt/ros/humble/setup.bash" >> .bashrc
 
-Now create a workspace directory for the ROS2 items
+Now create a workspace directory for the ROS2 items (the first 2 are from PX4, the last 2 are from New Mexico code)
 cd
 mkdir ws_offboard_control/src
 git clone https://github.com/PX4/px4_msgs.git
@@ -54,17 +56,10 @@ Now open a new terminal to install Gazebo:
 git clone https://github.com/osrf/gazebo
 
 
-
-
 Now to run simuation:
 
-New terminal - AGENT SETUP (will ask for user password)
-cd Micro-XRCE-DDS-Agent
-cd build
-cmake ..
-make
-sudo make install
-sudo ldconfig /usr/local/lib/
+New terminal - AGENT SETUP 
+
 MicroXRCEAgent udp4 -p 8888
 
 New Terminal - PX4 SETUP (should load PX4 symbol)
@@ -80,7 +75,8 @@ colcon build
 source install/local_setup.bash #OR source install/setup.bash
 ros2 run offboard_path offboard_ctrl_omni
 
+To watch the path of the drone, open QGroundControl
 
-
+To change the path of the omnicopter, go into the code under offboard_ctrl_omni from New Mexico 
 
 
